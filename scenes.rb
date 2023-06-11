@@ -9,7 +9,7 @@ HEIGHT = 600
 BORDER = 30
 
 module ZOrder 
-    BACKGROUND, BUTTONS, TEXT_FIELD, AVATAR = *0..3
+    BACKGROUND, MIDDLE, TOP = *0..2
 end
 
 class ToDoWindow < Gosu::Window
@@ -17,13 +17,15 @@ class ToDoWindow < Gosu::Window
     def initialize
         super WIDTH, HEIGHT 
         self.caption = "To Do Game"
-        @background_image = Gosu::Image.new(self,"start_images/background.jpg")
-        @play_button = Gosu::Image.new(self,"start_images/play_button.png")
-        @play_button_hover = Gosu::Image.new(self, "start_images/play_button_hover.png")
+        @background_image = Gosu::Image.new("start_images/background.jpg")
+        @play_button = Gosu::Image.new("start_images/play_button.png")
+        @play_button_hover = Gosu::Image.new( "start_images/play_button_hover.png")
         @hover_PLAY = false
         @info_font = Gosu::Font.new(20)
-        @scene = :start
         @coin_earned = 0
+        @clicking_sound = Gosu::Sample.new('music/click.wav')
+        @scene = :start
+        
     end
 
     def draw_background
@@ -31,7 +33,7 @@ class ToDoWindow < Gosu::Window
     end
 
     def draw_buttons
-        @play_button.draw(WIDTH/2.5,HEIGHT/2,ZOrder::BUTTONS)
+        @play_button.draw(WIDTH/2.5,HEIGHT/2,ZOrder::MIDDLE)
     end
 
     def mouse_over_play_button(mouse_x, mouse_y)
@@ -61,18 +63,16 @@ class ToDoWindow < Gosu::Window
         draw_buttons()
         
         if @hover_PLAY
-            @play_button_hover.draw(WIDTH/2.5,HEIGHT/2,ZOrder::BUTTONS)
+            @play_button_hover.draw(WIDTH/2.5,HEIGHT/2,ZOrder::TOP)
         end
-        # Draw the mouse_x
-        @info_font.draw("mouse_x: #{mouse_x}", 0, 550, ZOrder::BUTTONS, 1.0, 1.0, Gosu::Color::BLACK)
-        # Draw the mouse_y position
-        @info_font.draw("mouse_y: #{mouse_y}", 150, 550, ZOrder::BUTTONS, 1.0, 1.0, Gosu::Color::BLACK)
     end
 
     def button_down_start(id)
         case id
         when Gosu::MsLeft
             if mouse_over_play_button(mouse_x, mouse_y)
+                @clicking_sound.play
+                sleep(0.5)
                 initialize_game
             end
         end
@@ -85,9 +85,10 @@ class ToDoWindow < Gosu::Window
         @song.play(looping = true)
         @sound_on = Gosu::Image.new("asset/sound_on.png")
         @sound_off = Gosu::Image.new("asset/sound_off.png")
+
         
         @todo = ToDoField.new(self)
-        @todo_list = @todo.read_todo_list()
+        @todo_list = Array.new()
         @todo_font = Gosu::Font.new(14)
         @coin_font = Gosu::Font.new(16)
         
@@ -104,12 +105,12 @@ class ToDoWindow < Gosu::Window
     end
 
     def draw_coin_earned
-        @coin_font.draw(@coin_earned.to_s,231 , 55, ZOrder::BUTTONS, 1, 1, Gosu::Color::WHITE)
+        @coin_font.draw(@coin_earned.to_s,231 , 55, ZOrder::TOP, 1, 1, Gosu::Color::WHITE)
     end
 
     def draw_sound_button
-        @sound_on.draw(WIDTH - 100, BORDER, ZOrder::BUTTONS)
-        @sound_off.draw(WIDTH - 60, BORDER, ZOrder::BUTTONS)
+        @sound_on.draw(WIDTH - 100, BORDER, ZOrder::TOP)
+        @sound_off.draw(WIDTH - 60, BORDER, ZOrder::TOP)
     end
 
     def draw_game
@@ -118,16 +119,19 @@ class ToDoWindow < Gosu::Window
         draw_coin_earned()
         @todo.draw
         @player.draw
-        # Draw the mouse_x
-        @info_font.draw("mouse_x: #{mouse_x}", 0, 550, ZOrder::BUTTONS, 1.0, 1.0, Gosu::Color::BLACK)
-        # Draw the mouse_y position
-        @info_font.draw("mouse_y: #{mouse_y}", 150, 550, ZOrder::BUTTONS, 1.0, 1.0, Gosu::Color::BLACK)
     end
 
-    def gain_focus()
+    def button_down_textfields(id)
+        if id == Gosu::MS_LEFT
+            # Mouse click: Select text field based on mouse position.
+            self.text_input = @text_fields.find { |tf| tf.under_mouse? }
+            # Also move caret to clicked position
+            self.text_input.move_caret_to_mouse unless self.text_input.nil?
+        end
     end
 
     def button_down_game(id)
+        @todo.button_down(id)
         case id
         when Gosu::MsLeft
             if area_clicked(WIDTH - 100, WIDTH - 100 + @sound_on.width, BORDER, BORDER + @sound_on.height)
@@ -146,7 +150,6 @@ class ToDoWindow < Gosu::Window
         when :start
             update_start
         when :game
-            @todo.update
             update_game
         end
     end

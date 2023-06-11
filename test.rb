@@ -1,44 +1,35 @@
-class ToDo
-    attr_accessor :description, :time
 
-    def initialize(description, time)
-        @description = description
-        @time = time
+
+
+
+class TextField < Gosu::TextInput
+    attr_reader :x, :y
+    def initialize(window, x, y)
+        super()
+        @window, @x, @y = window, x, y
+        self.text = "Click to edit"
+    end
+
+    def update
+    end
+
+    def draw
+    end
+
+    def button_down(id)
     end
 end
 
-def read_todo(a_file)
-    todo_description = a_file.gets()
-    todo_time = a_file.gets.to_i
-    @todo = ToDo.new(todo_description, todo_time)
-    return @todo
-end
+class ToDoField
+    FONT = Gosu::Font.new(20)
 
+    def initialize(window)
+        @window = window
 
-def read_todo_list()
-    @todo_file = 'todo_list.txt'
-    todo_file = File.new(@todo_file, "r")
+        @check_box = Gosu::Image.new("box/checkbox.png")
+        @tick_image = Gosu::Image.new("asset/tick.png")
+        @cross_image = Gosu::Image.new("asset/cross.png")
 
-    @todo_list = Array.new()
-    count = todo_file.gets.to_i
-    puts count.to_s
-    i = 0
-    while i < count
-        todo = read_todo(todo_file)
-        @todo_list << todo
-        i += 1
+        @text_fields
+        @completed 
     end
-    
-    return @todo_list
-    todo_file.close
-
-end
-
-@todo_list = read_todo_list
-
-i = 0
-while i < @todo_list.length
-    print @todo_list[i].description
-    print "\n"
-    i += 1
-end
